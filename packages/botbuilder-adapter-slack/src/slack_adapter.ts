@@ -667,6 +667,34 @@ export class SlackAdapter extends BotAdapter {
                     res.end();
                 }
             }
+        } else if (event.type === 'video') {
+            const activity = {
+                timestamp: new Date(),
+                channelId: 'slack',
+                conversation: {
+                    id: event.channel ? event.channel : event.channel_id
+                },
+                triggered: { user: event.user_id },
+                team: event.team_id,
+                response_url: event.response_url,
+                channelData: event,
+                type: 'video'
+            };
+
+            // create a conversation reference
+            // @ts-ignore
+            const context = new TurnContext(this, activity as Activity);
+
+            context.turnState.set('httpStatus', 200);
+
+            await this.runMiddleware(context, logic);
+
+            res.status(context.turnState.get('httpStatus'));
+            if (context.turnState.get('httpBody')) {
+                res.send(context.turnState.get('httpBody'));
+            } else {
+                res.end();
+            }
         } else if (event.command) {
             if (this.options.verificationToken && event.token !== this.options.verificationToken) {
                 console.error('Rejected due to mismatched verificationToken:', event);
